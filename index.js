@@ -1,11 +1,25 @@
 const express = require("express");
+const mongoose = require("mongoose");
+
+const password = process.argv[2];
+const url = `mongodb+srv://renner_db_user:${password}@cluster0.ace6imq.mongodb.net/noteApp?appName=Cluster0`;
+
+mongoose.set("strictQuery", false);
+mongoose.connect(url, { family: 4 });
+
+const noteSchema = new mongoose.Schema({
+  content: String,
+  important: Boolean,
+});
+
+const Note = mongoose.model("Note", noteSchema);
+
 const app = express();
 // const cors = require('cors')
 
 app.use(express.json());
 // app.use(cors())
-app.use(express.static('dist'))
-
+app.use(express.static("dist"));
 
 const requestLogger = (request, response, next) => {
   console.log("Method:", request.method);
@@ -16,7 +30,6 @@ const requestLogger = (request, response, next) => {
 };
 
 app.use(requestLogger);
-
 
 let notes = [
   {
@@ -39,9 +52,11 @@ app.get("/", (request, response) => {
   response.send("<h1>Hello World!</h1>");
 });
 
-app.get("/api/notes", (request, response) => {
-  response.json(notes);
-});
+app.get('/api/notes', (request, response) => {
+  Note.find({}).then(notes => {
+    response.json(notes)
+  })
+})
 
 app.get("/api/notes/:id", (request, response) => {
   const id = request.params.id;
@@ -92,6 +107,6 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint);
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 3001;
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
